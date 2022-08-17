@@ -127,6 +127,48 @@ histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
 
 If the disk is too slow, assigning a dedicated disk to Etcd or using a faster disk will typically solve the problem.
 
+### Check the Disk Performance
+
+There is a pod published on Quay called `openshift-etcd-suite` which contains `fio` a benchmarking tool. This can be used on any of the control plane nodes like so:
+
+```
+oc debug node/$node
+chroot /host
+podman run --privileged --volume /var/lib/etcd:/test quay.io/peterducai/openshift-etcd-suite:latest fio
+```
+
+ETCD should be at least 1500-2000 sequential IOPS in generic sequential test for healthy performance. It should be at least 4000 IOPS for heavily loaded clusters. 
+
+**NOTE:** that IOPS is just reference number
+
+The Fsync latency is more important than IOPs however. You will see this:
+
+```
+[ETCD-like FSYNC WRITE with fsync engine]
+
+the 99th percentile of this metric should be less than 10ms
+```
+
+If this fails you will see something like this:
+
+```
+BAD.. 99th fsync is higher than 10ms.
+```
+
+You can also run the `etcd-perf` pod like so:
+
+```
+podman run --volume /var/lib/etcd:/var/lib/etcd:Z quay.io/openshift-scale/etcd-perf
+```
+
+Which will also give you the 99th percentile output
+
+```
+99th percentile of fsync is xxx ns
+99th percentile of the fsync is within the recommended threshold - 10 ms, the disk can be used to host etcd
+```
+
+**NOTE** run each test multiple times. Due to the way load can be hitting a live cluster, you may get false negatives. You need to take multiple readings over time in order to get a good picture
 
 # Verification
 
