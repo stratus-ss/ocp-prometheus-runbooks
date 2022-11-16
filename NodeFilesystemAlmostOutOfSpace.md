@@ -148,6 +148,22 @@ Deleted Containers
 Deleted Images
 ```
 
+## Identifying Pod Overlays
+
+You may consider examining the overlay file system. It is possible that you have a pod or container that is using more space than anticipated. You can get a mapping of POD -> OVERLAY by first debugging the node
+
+```
+oc debug node/<node>
+```
+
+Then getting a mapping of pod name to mount points using `crictl`:
+
+```
+chroot /host
+crictl inspect $(crictl ps -qa)| \
+jq  '{PODNAME: .info.runtimeSpec.annotations."io.kubernetes.pod.name", MOUNTPOINT: .info.runtimeSpec.annotations."io.kubernetes.cri-o.MountPoint"}'
+```
+
 
 # Verification
 
