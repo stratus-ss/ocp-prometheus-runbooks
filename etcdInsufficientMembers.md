@@ -11,18 +11,28 @@ Is true. In a normal cluster of 3, this would mean that there is only a single m
 The first thing to determine is whether all the control plane are up. After logging into the cluster with `oc login` check the nodes:
 
 ```
-oc get nodes
+oc get nodes -l node-role.kubernetes.io/master=
 
 NAME                            STATUS   ROLES          AGE   VERSION
 master-0.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
 master-1.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
 master-2.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
-worker-0.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
-worker-1.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
-worker-2.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
 ```
 
-If one of the control plane is `Not Ready` access the KVM host and determine if the VM is running on the host. Start by checking the service:
+If one of the control plane is `Not Ready`, first check to see if there is an upgrade in process:
+
+```
+oc adm upgrade
+```
+
+There are times when an upgrade is not occuring but a change to a machineconfig is causing a rolling reboot in the cluster. This event has the potential to cause an alert to trigger.
+
+We can check if the `machineconfiguration.openshift.io/state : Working` annotation is set for any of the master nodes. This is the case when the machine-config-operator (MCO) is working on it.
+
+```
+oc get nodes -l node-role.kubernetes.io/master= -o template --template='{{range .items}}{{"===> node:> "}}{{.metadata.name}}{{"\n"}}{{range $k, $v := .metadata.annotations}}{{println $k ":" $v}}{{end}}{{"\n"}}{{end}}'
+```
+If the above are not the case. You should investigate the hypervisor. In this example, access the KVM host and determine if the VM is running on the host. Start by checking the service:
 
 ```
 systemctl status libvirtd
