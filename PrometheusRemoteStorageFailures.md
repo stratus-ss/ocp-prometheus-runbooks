@@ -1,7 +1,11 @@
 # PagerDuty Alert ID: PrometheusRemoteStorageFailures
 # Description
 
-This alert fires if greater than 1% of the Prometheus sample data is able to be sent to the remote storage. 
+This alert fires if greater than 1% of the Prometheus sample data is able to be sent to the remote storage in a 5 minute window. 
+
+## Severity and Impact
+
+Prometheus samples in remote storage might be missing. Depending on the remote_write pipeline configuration, Prometheus memory usage might increase while pending samples are queued.
 
 # Investigation and Triage
 

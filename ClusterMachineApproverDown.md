@@ -1,7 +1,14 @@
+> [!WARN]
+> This alert is no longer valid in OCP 4.17+
+
+
 # PagerDuty Alert ID: ClusterMachineApprover Down
 # Description
 
 This job is considered up when the pod `machine-approver-$UID` in the namespace `openshift-cluster-machine-approver` is functioning and the service `machine-approver` exists.
+
+## Severity and Impact
+
 
 # Investigation and Triage
 

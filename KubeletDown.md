@@ -2,6 +2,9 @@
 # Description
 This alert fires when the Kubelet service on the host is down.
 
+## Severity and Impact
+
+This alert represents a critical threat to the cluster's stability. Excluding the possibility of a network issue preventing the monitoring system from scraping Kubelet metrics, multiple nodes in the cluster are likely unable to respond to configuration changes for pods and other resources, and some debugging tools are likely not to be functional, such as oc exec and oc logs.
 
 # Investigation and Triage
 

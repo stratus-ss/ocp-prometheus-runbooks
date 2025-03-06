@@ -1,6 +1,11 @@
 # PagerDuty Alert ID: KubeSchedulerDown
 # Description
 The Kubernetes scheduler is a control plane process which assigns Pods to Nodes. The scheduler determines which Nodes are valid placements for each Pod in the scheduling queue according to constraints and available resources. The scheduler then ranks each valid Node and binds the Pod to a suitable Node. When this component is down no new work can be scheduled
+
+##  Severity and Impact
+
+This will not impact running workloads. However, the cluster is unable to schedule new pods. Newly created pods will stay in the Pending state until the kube-scheduler is running properly again.
+
 # Investigation and Triage
 
 The first thing to determine which pod may be having the problem. After logging into the cluster with `oc login` you will need to examine each of the running pods to determine which container is having the problem. Change to the `openshift-kube-scheduler` project:
@@ -34,13 +39,31 @@ You can also get the logs of each pod:
 oc logs openshift-kube-scheduler-master-1.lab-cluster.ocp4.lab|less
 ```
 
-Check the VMs for high load, I/O and ram usage on the control plane and the KVM host as well. Using `top` examin the `load average`. If the `load average is greater than the %CPU usage, the host is most likely constrained by disk I/O. Don't forget to check the available ram in both the VM and the KVM host:
+To see an operator status of kube-scheduler.
+
+```console
+$ oc get clusteroperators.config.openshift.io kube-scheduler
+```
+
+Take a look at `KubeScheduler`'s `.status.conditions` and
+also see what is the current state of each instance of kube-scheduler
+on each node in `.status.nodeStatuses`.
+
+```console
+$ oc get -o yaml kubeschedulers.operator.openshift.io cluster
+```
+
+See operator events.
+
+```console
+$ oc get events --sort-by=.metadata.creationTimestamp -n openshift-kube-scheduler-operator
+```
+
+Check the machines for high load, I/O and ram usage on the control plane. Using `top` examin the `load average`. If the `load average is greater than the %CPU usage, the host is most likely constrained by disk I/O. Don't forget to check the available ram in both the VM and the KVM host:
 
 ```
 free -m
 ```
-
-If the KVM host has overcommitted ram or is ram starved, the VM will not know this and think it has more resources available than it can actually access. This will cause performance issues in the VM.
 
 You can try draining the nodes one at a time and rebooting them.
 

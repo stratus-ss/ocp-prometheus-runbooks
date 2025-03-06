@@ -1,7 +1,12 @@
 # PagerDuty Alert ID: NodeFileSystemSpaceFillingUp
 # Description
 
-This fires when there is only 3% space left on the node. 
+This fires when there is less than 10% space left on the node. It then attempts to predict whether or not the host will run out of space in the next 4 hours.
+
+## Severity and Impact
+
+If a file system fills up and runs out of space, processes that need to write to the file system can no longer do so, which can result in lost data and system instability.
+
 
 # Investigation and Triage
 

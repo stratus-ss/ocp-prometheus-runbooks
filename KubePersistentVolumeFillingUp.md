@@ -3,6 +3,10 @@
 
 This alert fires when the volume (in bytes) for a PV in (openshift-.*|kube-.*|default|logging) has less than 3% available
 
+## Severity and Impact
+
+If a persistent volume used by a system component fills up, the component is unlikely to function normally. A full persistent volume can also lead to a partial or full cluster outage.
+
 # Investigation and Triage
 
 This alert is fairly straight forward and indicates that the indicated PV is nearing capacity. Generally speaking, there is no troubleshooting that needs to be done other than noting which pod is using the PV and then adjusting for more space.

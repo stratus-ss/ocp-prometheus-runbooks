@@ -3,6 +3,10 @@
 
 This fires when there are less than 3% inodes available. An `inode` stores metadata about a given file on a file system. If the system has a large number of small files, it is possible to use all the available `inode` allocation while still having plenty of disk space available.
 
+## Severity and Impact
+
+When a node's filesystem becomes full, it has a widespread impact. This issue can cause any or all of the applications scheduled to that node to experience anything from degraded performance to becoming fully inoperable. Depending on the node and filesystem involved, this issue could pose a critical threat to the stability of the cluster.
+
 # Investigation and Triage
 
 The investigation steps will depend on the type of node that is throwing the error. If this is a control plane host, it is possible that ETCD is taking up a significant amount of space. 

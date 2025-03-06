@@ -4,6 +4,22 @@
 
 This alert fires when the Kube Controller Manager pods are down.
 
+## Severity and Impact
+Many features stop working when kube-controller-manager is down.
+
+This includes:
+
+* workload controllers (Deployment, ReplicaSet, DaemonSet, ...)
+* resource quotas
+* pod disruption budgets
+* garbage collection
+* certificate signing requests
+* service accounts, tokens
+* storage
+* nodes' statuses and taints
+* SCCs
+* and more...
+
 # Investigation and Triage
 The first thing to determine which pod may be having the problem. If the alert doesn't specify the pod, you will have to log into the OpenShift cluster. After logging into the cluster with `oc login` you will need to examine each of the running pods to determine which container is having the problem. Change to the `openshift-controller-manager` project:
 

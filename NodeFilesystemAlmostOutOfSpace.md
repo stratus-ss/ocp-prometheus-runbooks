@@ -3,6 +3,10 @@
 
 This fires when there is only 3% space left on the node. 
 
+## Severity and Impact
+
+A node's file system becoming full can have a widespread negative impact. This issue can cause any or all of the applications scheduled to that node to experience anything from degraded performance to becoming fully inoperable. Depending on the node and file system involved, this issue can pose a critical threat to the stability of the cluster.
+
 # Investigation and Triage
 
 The investigation steps will depend on the type of node that is throwing the error. If this is a control plane host, it is possible that ETCD is taking up a significant amount of space. 
