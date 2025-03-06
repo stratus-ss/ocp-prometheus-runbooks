@@ -50,18 +50,6 @@ oc rsh prometheus-k8s-0
 
 You can either run the `df -h` or `mount` command to determine the status of the persistant mount. 
 
-## KVM storage
-
-You should proceed to troubleshoot the underlying KVM hardware. Ensure that there is enough ram on the host. Identify the correct KVM host and SSH to the box. Once logged in run
-
-```
-free -m
-```
-
-To get a live picture of the system as a whole you can run `glances`. This tool provides disk activity along with system activity (similar) to `top` all in one interface. You will want to make sure your terminal a decent size to be able to take advantage of `glances`.
-
-Also consider looking at the `iostat` or `iotop` commands to view the current I/O load on the host.
-
 ## Drain and Reboot Problem Node
 
 You can try draining the nodes one at a time and rebooting them.
