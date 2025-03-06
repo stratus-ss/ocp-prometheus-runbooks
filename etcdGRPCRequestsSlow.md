@@ -1,6 +1,9 @@
 # PagerDuty Alert ID: etcdGRPCRequestsSlow
 # Description
 Etcd uses gRPC to communicate between each of the nodes in the cluster. It is good to track the performance and errors of these metrics. This alert fires if at least 1% the gRPC requests in the ETCD cluster are taking longer than 0.15 seconds as seen in a 5 minute time frame
+
+# 
+
 # Investigation and Triage
 This alert can be caused by multiple sources: high load, disk activity, network latency etc. As a result you will have to spend time narrowing down the source of the problem and it is not possible to document the possible solutions. Therefore what follows below are troubleshooting steps to help to get you in the right direction.
 
@@ -18,6 +21,31 @@ histogram_quantile(0.99, rate(etcd_grpc_unary_requests_duration_seconds_bucket[5
 histogram_quantile(0.99,etcd_network_peer_round_trip_time_seconds_bucket)
 ```
 
+To get a rough timeline of events you can run
+```
+histogram_quantile(0.99, sum(rate(grpc_server_handling_seconds_bucket{job=~".*etcd.*", grpc_type="unary"}[5m])) without(grpc_type))
+```
+
+
+There are two metrics that should be checked. To rule out a slow disk, monitor `backend_commit_duration_seconds` (p99 duration should be less than 25ms). The Prometheus query for this is:
+
+```
+histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[5m]))
+```
+
+The `wal_fsync_duration_seconds` (p99 duration should be less than 10ms), to confirm the disk is reasonably fast. You can check this with this query:
+
+```
+histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
+```
+
+If the disk is too slow, assigning a dedicated disk to Etcd or using a faster disk will typically solve the problem.
+
+You can also check Network Round Trip which can cause Slow gRPC calls:
+
+```
+histogram_quantile(0.99, sum by (instance, le) (irate(etcd_network_peer_round_trip_time_seconds_bucket{job="etcd"}[5m])))
+```
 ## Check ETCD logs
 
 The first thing to determine is what errors you are receiving in the ETCD logs. After logging into the cluster with `oc login` you will need to examine the pod logs for each of the Prometheus pods. Change to the `openshift-etcd` project:
@@ -110,22 +138,6 @@ etcdctl endpoint status --write-out=table
 | https://10.120.120.51:2379 | 5c0214bbf7570840 |   3.4.9 |  171 MB |     false |      false |      3932 |    7310586 |            7310586 |        |
 +----------------------------+------------------+---------+---------+-----------+------------+-----------+------------+--------------------+--------+
 ```
-
-### Check Prometheus Metrics
-
-There are two metrics that should be checked. To rule out a slow disk, monitor `backend_commit_duration_seconds` (p99 duration should be less than 25ms). The Prometheus query for this is:
-
-```
-histogram_quantile(0.99, rate(etcd_disk_backend_commit_duration_seconds_bucket[5m]))
-```
-
-The `wal_fsync_duration_seconds` (p99 duration should be less than 10ms), to confirm the disk is reasonably fast. You can check this with this query:
-
-```
-histogram_quantile(0.99, rate(etcd_disk_wal_fsync_duration_seconds_bucket[5m]))
-```
-
-If the disk is too slow, assigning a dedicated disk to Etcd or using a faster disk will typically solve the problem.
 
 ### Check the Disk Performance
 

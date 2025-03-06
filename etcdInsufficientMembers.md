@@ -32,40 +32,22 @@ We can check if the `machineconfiguration.openshift.io/state : Working` annotati
 ```
 oc get nodes -l node-role.kubernetes.io/master= -o template --template='{{range .items}}{{"===> node:> "}}{{.metadata.name}}{{"\n"}}{{range $k, $v := .metadata.annotations}}{{println $k ":" $v}}{{end}}{{"\n"}}{{end}}'
 ```
-If the above are not the case. You should investigate the hypervisor. In this example, access the KVM host and determine if the VM is running on the host. Start by checking the service:
+
+
+If one or more of the control planes are `Not Ready` , start by checking for unsigned CSRs:
 
 ```
-systemctl status libvirtd
-
-● libvirtd.service - Virtualization daemon
-     Loaded: loaded (/lib/systemd/system/libvirtd.service; enabled; vendor preset: enabled)
-     Active: active (running) since Tue 2020-12-01 19:25:50 UTC; 2 weeks 0 days ago
-TriggeredBy: ● libvirtd.socket
-             ● libvirtd-admin.socket
-             ● libvirtd-ro.socket
-       Docs: man:libvirtd(8)
-             https://libvirt.org
-   Main PID: 3058 (libvirtd)
-      Tasks: 19 (limit: 32768)
-     Memory: 71.2M
---- SNIP ---
+NAME                                             AGE   SIGNERNAME                                    REQUESTOR                                                                         REQUESTEDDURATION   CONDITION
+csr-48xxs                                        89m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
 ```
 
-If the service is functioning properly, check that the VM is running:
+You can approve any outstanding CSRs:
 
 ```
-virsh list
-
- virsh list --all
- Id   Name             State
----------------------------------
- 7    ocp4-master-0    running
- 8    ocp4-master-1    running
- 16   ocp4-worker-1    running
- 17   ocp4-worker-0    running
+for x in `oc get csr --no-headers |grep Pend |awk '{print $1}'`; do oc adm certificate approve $x; done
 ```
 
-If all of the VMs are healthy, get a list of all of the ETCD pods: 
+If all of the machines are healthy, get a list of all of the ETCD pods: 
 
 ```
 oc get pods -n openshift-etcd
@@ -162,6 +144,8 @@ Once the node is `Ready`, make it as schedulable:
 ```
 oc adm uncordon node/node1
 ```
+
+If the above are not the case. You should investigate the hypervisor or baremetal hosts. 
 
 # Verification
 

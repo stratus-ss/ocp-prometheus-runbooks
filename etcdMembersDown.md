@@ -2,53 +2,36 @@
 # Description
 This alert indicates that one or more of the ETCD members is offline.
 
+#  Severity & Impact
+
+This is a critical  situation and needs to be addressed immediately. In etcd, a majority of (n/2)+1 has to agree on membership changes in order to avoid a split-brain. 
+
+The average cluster has 3 control plane, if a single control plane is down, there is no impact to the cluster. If more than (n/2) is down, this is a severe problem and the cluster is in a Read-Only state.
+
 # Investigation and Triage
 
 The first thing to determine is whether all the control plane are up. After logging into the cluster with `oc login` check the nodes:
 
 ```
-oc get nodes
+oc get nodes -l node-role.kubernetes.io/master=
 
 NAME                            STATUS   ROLES          AGE   VERSION
 master-0.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
 master-1.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
 master-2.lab-cluster.ocp4.lab   Ready    master         14d   v1.18.3+ca4017d
-worker-0.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
-worker-1.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
-worker-2.lab-cluster.ocp4.lab   Ready    infra,worker   14d   v1.18.3+ca4017d
 ```
 
-If one of the control plane is `Not Ready` access the KVM host and determine if the VM is running on the host. Start by checking the service:
+If one or more of the control planes are `Not Ready` , start by checking for unsigned CSRs:
 
 ```
-systemctl status libvirtd
-
-● libvirtd.service - Virtualization daemon
-     Loaded: loaded (/lib/systemd/system/libvirtd.service; enabled; vendor preset: enabled)
-     Active: active (running) since Tue 2020-12-01 19:25:50 UTC; 2 weeks 0 days ago
-TriggeredBy: ● libvirtd.socket
-             ● libvirtd-admin.socket
-             ● libvirtd-ro.socket
-       Docs: man:libvirtd(8)
-             https://libvirt.org
-   Main PID: 3058 (libvirtd)
-      Tasks: 19 (limit: 32768)
-     Memory: 71.2M
---- SNIP ---
+NAME                                             AGE   SIGNERNAME                                    REQUESTOR                                                                         REQUESTEDDURATION   CONDITION
+csr-48xxs                                        89m   kubernetes.io/kube-apiserver-client-kubelet   system:serviceaccount:openshift-machine-config-operator:node-bootstrapper         <none>              Pending
 ```
 
-If the service is functioning properly, check that the VM is running:
+You can approve any outstanding CSRs:
 
 ```
-virsh list
-
- virsh list --all
- Id   Name             State
----------------------------------
- 7    ocp4-master-0    running
- 8    ocp4-master-1    running
- 16   ocp4-worker-1    running
- 17   ocp4-worker-0    running
+for x in `oc get csr --no-headers |grep Pend |awk '{print $1}'`; do oc adm certificate approve $x; done
 ```
 
 If all of the VMs are healthy, get a list of all of the ETCD pods: 
